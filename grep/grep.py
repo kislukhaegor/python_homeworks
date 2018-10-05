@@ -55,7 +55,7 @@ def make_output_line(line, index=0, is_main=True, show_number=False):
         return line
 
     join_line = ':' if is_main else '-'
-    return join_line.join([str(index), line])
+    return "{0}{1}{2}".format(str(index), join_line, line)
 
 
 def parse_lines(lines, params, regular):
