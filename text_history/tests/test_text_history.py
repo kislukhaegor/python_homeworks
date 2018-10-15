@@ -171,3 +171,44 @@ class TextHistoryTestCase(TestCase):
 
         h.insert('a')
         self.assertEqual([], h.get_actions(0, 0))
+
+    def test_get_actions__optimyze_1(self):
+        h = TextHistory()
+        h.insert('a')
+        h.insert('b')
+        h.delete(0, 1)
+        h.delete(0, 1)
+        h.replace("abc")
+        actions = h.get_actions()
+        self.assertEqual(3, len(actions))
+        insert, delete, replace = actions
+        
+        self.assertIsInstance(insert, InsertAction)
+        self.assertIsInstance(delete, DeleteAction)
+        self.assertIsInstance(replace, ReplaceAction)
+
+        # insert
+        self.assertEqual(0, insert.from_version)
+        self.assertEqual(2, insert.to_version)
+        self.assertEqual("ab", insert.text)
+
+        #delete
+        self.assertEqual(2, delete.from_version)
+        self.assertEqual(4, delete.to_version)
+        self.assertEqual(2, delete.length)
+
+    def test_get_actions__optimyze_2(self):
+        h = TextHistory()
+        h.insert('a')
+        h.insert('b', 0)
+        h.replace("abc")
+        actions = h.get_actions()
+        self.assertEqual(2, len(actions))
+        insert, replace = actions
+        
+        self.assertIsInstance(insert, InsertAction)
+        self.assertIsInstance(replace, ReplaceAction)
+        
+        self.assertEqual(0, insert.from_version)
+        self.assertEqual(2, insert.to_version)
+        self.assertEqual("b", insert.text)

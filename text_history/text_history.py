@@ -61,8 +61,41 @@ class TextHistory:
                 return index
             elif action.to_version == version:
                 return index + 1
-            tmp = action.to_version
         raise ValueError()
+
+    @classmethod
+    def _optymize_delete(cls, action_list, action):
+        if type(action_list[-1]) != type(action) or type(action) != DeleteAction:
+            return None
+
+        if action.pos == action_list[-1].pos:
+            new_action = DeleteAction(action.pos,
+                                      action.length + action_list[-1].length,
+                                      action_list[-1].from_version,
+                                      action.to_version)
+            del action_list[-1]
+            action_list.append(new_action)
+
+    @classmethod
+    def _optimyze_insert(cls, action_list, action):
+        if type(action_list[-1]) != type(action) or type(action) != InsertAction:
+            return None
+
+        if action.pos == action_list[-1].pos:
+            new_action = InsertAction(action.pos,
+                                      action.text,
+                                      action_list[-1].from_version,
+                                      action.to_version)
+            del action_list[-1]
+            action_list.append(new_action)
+
+        elif action.pos - (action_list[-1].pos + len(action_list[-1].text)) == 0:
+            new_action = InsertAction(action_list[-1].pos,
+                                      action_list[-1].text + action.text,
+                                      action_list[-1].from_version,
+                                      action.to_version)
+            del action_list[-1]
+            action_list.append(new_action)
 
     @classmethod
     def _optimyze(cls, actions):
@@ -70,23 +103,13 @@ class TextHistory:
         for action in actions:
             if not new_list:
                 new_list.append(action)
-            elif type(action) == type(new_list[-1]) and type(action) in [DeleteAction, InsertAction]:
+            elif type(action) == type(new_list[-1]):
                 if type(action) == DeleteAction:
-                    if action.pos == new_list[-1].pos:
-                        new_action = DeleteAction(action.pos, action.length + new_list[-1].length, new_list[-1].from_version, action.to_version)
-                        del new_list[-1]
-                        new_list.append(new_action)
+                    cls._optymize_delete(new_list, action)
+                elif type(action) == InsertAction:
+                    cls._optimyze_insert(new_list, action)
                 else:
-                    if action.pos == new_list[-1].pos:
-                        new_action = InsertAction(action.pos, action.text, new_list[-1].from_version, action.to_version)
-                        del new_list[-1]
-                        new_list.append(new_action)
-                    
-                    elif action.pos - (len(new_list[-1].pos + new_list[-1].text)) == 0:
-                        new_action = InsertAction(new_list[-1].pos, new_list[-1].text + action.text, new_list[-1].from_version, action.to_version)
-
-                    else:
-                        new_list.append(action)
+                    new_list.append(action)
             else:
                 new_list.append(action)
         return new_list
@@ -190,7 +213,7 @@ class DeleteAction(Action):
     @property
     def length(self):
         return self._length
-    
+
     def apply(self, text, version):
         if not self._check_version(version):
             raise ValueError()
