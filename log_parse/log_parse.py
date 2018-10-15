@@ -121,14 +121,14 @@ class LogLineHandler:
         counter = Counter({key: value_key(value) for key, value in self.logs.items()})
         return [elem[1] for elem in counter.most_common(count)]
 
-def parse( 
+def parse(
         ignore_files=False,
         ignore_urls=[],
         start_at=None,
         stop_at=None,
         request_type=None,
         ignore_www=False,
-            slow_queries=False
+        slow_queries=False
 ):
     line_handler = LogLineHandler(
         ignore_files=ignore_files,
