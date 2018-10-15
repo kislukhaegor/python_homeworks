@@ -63,8 +63,8 @@ class TextHistory:
                 return index + 1
         raise ValueError()
 
-    @classmethod
-    def _optymize_delete(cls, action_list, action):
+    @staticmethod
+    def _optymize_delete(action_list, action):
         if type(action_list[-1]) != type(action) or type(action) != DeleteAction:
             return None
 
@@ -76,8 +76,8 @@ class TextHistory:
             del action_list[-1]
             action_list.append(new_action)
 
-    @classmethod
-    def _optimyze_insert(cls, action_list, action):
+    @staticmethod
+    def _optimyze_insert(action_list, action):
         if type(action_list[-1]) != type(action) or type(action) != InsertAction:
             return None
 
@@ -97,17 +97,17 @@ class TextHistory:
             del action_list[-1]
             action_list.append(new_action)
 
-    @classmethod
-    def _optimyze(cls, actions):
+    @staticmethod
+    def _optimyze(actions):
         new_list = []
         for action in actions:
             if not new_list:
                 new_list.append(action)
             elif type(action) == type(new_list[-1]):
                 if type(action) == DeleteAction:
-                    cls._optymize_delete(new_list, action)
+                    TextHistory._optymize_delete(new_list, action)
                 elif type(action) == InsertAction:
-                    cls._optimyze_insert(new_list, action)
+                    TextHistory._optimyze_insert(new_list, action)
                 else:
                     new_list.append(action)
             else:
@@ -162,8 +162,8 @@ class InsertAction(Action):
 
         return self._insert(text, self._pos, self._text)
 
-    @classmethod
-    def _insert(cls, old_str, pos, ins_str):
+    @staticmethod
+    def _insert(old_str, pos, ins_str):
         if pos > len(old_str) or pos < 0:
             raise ValueError()
 
@@ -190,8 +190,8 @@ class ReplaceAction(Action):
 
         return self._replace(text, self._pos, self._text)
 
-    @classmethod
-    def _replace(cls, old_str, pos, ins_str):
+    @staticmethod
+    def _replace(old_str, pos, ins_str):
         if pos > len(old_str) or pos < 0:
             raise ValueError()
 
@@ -220,8 +220,8 @@ class DeleteAction(Action):
 
         return self._delete(text, self._pos, self._length)
 
-    @classmethod
-    def _delete(cls, text, pos, length):
+    @staticmethod
+    def _delete(text, pos, length):
         if pos > len(text) or pos < 0:
             raise ValueError()
 
