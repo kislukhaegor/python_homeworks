@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 from urllib.parse import urlparse, urlunparse, ParseResult
 from datetime import datetime
+from collections import Counter, defaultdict
 import re
 
 class LogLineParseException(ValueError):
@@ -80,15 +81,12 @@ class LogLineHandler:
         if self.params['stop_at']:
             self.params['stop_at'] = datetime.strptime(self.params['stop_at'], '%d/%b/%Y %X')
 
-        self.logs = dict()
+        self.logs = defaultdict(lambda: [0, 0])
 
     def add_log(self, line):
         if self.check_line(line):
-            if line in self.logs:
-                self.logs[line][0] += 1
-                self.logs[line][1] += line['response_time']
-            else:
-                self.logs[line] = [1, line['response_time']]
+            self.logs[line][0] += 1
+            self.logs[line][1] += line['response_time']
 
     def check_line(self, line):
         if self.params['ignore_files']:
@@ -117,26 +115,20 @@ class LogLineHandler:
 
     def get_top(self, count=5, slow_queries=False):
         if slow_queries:
-            key = lambda x: x[1][1]
+            value_key = lambda x: x[1] // x[0]
         else:
-            key = lambda x: x[1][0]
+            value_key = lambda x: x[0]
+        counter = Counter({key: value_key(value) for key, value in self.logs.items()})
+        return [elem[1] for elem in counter.most_common(count)]
 
-        sorted_logs = sorted(self.logs.items(), key=key, reverse=True)
-        count = min(len(sorted_logs), count)
-        if slow_queries:
-            return sorted([sorted_logs[i][1][1] // sorted_logs[i][1][0] \
-                           for i in range(count)], reverse=True)
-        return [sorted_logs[i][1][0] for i in range(count)]
-
-
-def parse(
+def parse( 
         ignore_files=False,
         ignore_urls=[],
         start_at=None,
         stop_at=None,
         request_type=None,
         ignore_www=False,
-        slow_queries=False
+            slow_queries=False
 ):
     line_handler = LogLineHandler(
         ignore_files=ignore_files,
