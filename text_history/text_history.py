@@ -101,6 +101,15 @@ class Action(metaclass=ABCMeta):
 
         return True
 
+    def optimize_with_insert_action(self, other_action):
+        return [self, other_action]
+
+    def optimize_with_delete_action(self, other_action):
+        return [self, other_action]
+
+    def optimize_with_replace_action(self, other_action):
+        return [self, other_action]
+
     @abstractmethod
     def optimize(self, other_action):
         pass
@@ -149,12 +158,6 @@ class InsertAction(Action):
 
         return [self, other_action]
 
-    def optimize_with_delete_action(self, other_action):
-        return [self, other_action]
-
-    def optimize_with_replace_action(self, other_action):
-        return [self, other_action]
-
     def optimize(self, other_action):
         return other_action.optimize_with_insert_action(self)
 
@@ -189,15 +192,6 @@ class ReplaceAction(Action):
         else:
             return old_str[:pos] + ins_str + old_str[pos + len(ins_str):]
 
-    def optimize_with_insert_action(self, other_action):
-        return [self, other_action]
-
-    def optimize_with_delete_action(self, other_action):
-        return [self, other_action]
-
-    def optimize_with_replace_action(self, other_action):
-        return [self, other_action]
-
     def optimize(self, other_action):
         return other_action.optimize_with_replace_action(self)
 
@@ -231,9 +225,6 @@ class DeleteAction(Action):
 
         return text[:pos] + text[pos + length:]
 
-    def optimize_with_insert_action(self, other_action):
-        return [self, other_action]
-
     def optimize_with_delete_action(self, other_action):
         if other_action.pos == self.pos:
             action = DeleteAction(other_action.pos,
@@ -242,9 +233,6 @@ class DeleteAction(Action):
                                   other_action.to_version)
             return [action]
 
-        return [self, other_action]
-
-    def optimize_with_replace_action(self, other_action):
         return [self, other_action]
 
     def optimize(self, other_action):
