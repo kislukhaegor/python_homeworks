@@ -53,7 +53,7 @@ class TextHistory:
 
         start_pos = self._find_version_index(from_version)
         end_pos = self._find_version_index(to_version)
-        return self._optimyze(self._actions[start_pos:end_pos])
+        return self._optimize(self._actions[start_pos:end_pos])
 
     def _find_version_index(self, version):
         for index, action in enumerate(self._actions):
@@ -63,56 +63,15 @@ class TextHistory:
                 return index + 1
         raise ValueError()
 
-    @staticmethod
-    def _optymize_delete(action_list, action):
-        if not isinstance(action, type(action_list[-1])) or not isinstance(action, DeleteAction):
-            return None
-
-        if action.pos == action_list[-1].pos:
-            action = DeleteAction(action.pos,
-                                  action.length + action_list[-1].length,
-                                  action_list[-1].from_version,
-                                  action.to_version)
-            del action_list[-1]
-
-        action_list.append(action)
 
     @staticmethod
-    def _optimyze_insert(action_list, action):
-        if not isinstance(action, type(action_list[-1])) or not isinstance(action, InsertAction):
-            return None
-
-        if action.pos == action_list[-1].pos:
-            action = InsertAction(action.pos,
-                                  action.text,
-                                  action_list[-1].from_version,
-                                  action.to_version)
-            del action_list[-1]
-
-        elif action.pos - (action_list[-1].pos + len(action_list[-1].text)) == 0:
-            action = InsertAction(action_list[-1].pos,
-                                  action_list[-1].text + action.text,
-                                  action_list[-1].from_version,
-                                  action.to_version)
-            del action_list[-1]
-
-        action_list.append(action)
-
-    @staticmethod
-    def _optimyze(actions):
+    def _optimize(actions):
         new_list = []
         for action in actions:
             if not new_list:
                 new_list.append(action)
-            elif isinstance(action, type(new_list[-1])):
-                if isinstance(action, DeleteAction):
-                    TextHistory._optymize_delete(new_list, action)
-                elif isinstance(action, InsertAction):
-                    TextHistory._optimyze_insert(new_list, action)
-                else:
-                    new_list.append(action)
-            else:
-                new_list.append(action)
+            tmp = new_list.pop()
+            new_list.extend(action.optimize(tmp))
         return new_list
 
 
@@ -142,6 +101,9 @@ class Action(metaclass=ABCMeta):
 
         return True
 
+    @abstractmethod
+    def optimize(self, other_action):
+        pass
 
 class InsertAction(Action):
     def __init__(self, pos, text, from_version, to_version):
@@ -169,6 +131,32 @@ class InsertAction(Action):
             raise ValueError()
 
         return ins_str.join([old_str[:pos], old_str[pos:]])
+
+    def optimize_with_insert_action(self, other_action):
+        if self.pos == other_action.pos:
+            action = InsertAction(other_action.pos,
+                                  other_action.text,
+                                  self.from_version,
+                                  other_action.to_version)
+            return [action]
+
+        elif other_action.pos - (self.pos + len(self.text)) == 0:
+            action = InsertAction(self.pos,
+                                  self.text + other_action.text,
+                                  self.from_version,
+                                  other_action.to_version)
+            return [action]
+
+        return [self, other_action]
+
+    def optimize_with_delete_action(self, other_action):
+        return [self, other_action]
+
+    def optimize_with_replace_action(self, other_action):
+        return [self, other_action]
+
+    def optimize(self, other_action):
+        return other_action.optimize_with_insert_action(self)
 
 
 class ReplaceAction(Action):
@@ -201,6 +189,18 @@ class ReplaceAction(Action):
         else:
             return old_str[:pos] + ins_str + old_str[pos + len(ins_str):]
 
+    def optimize_with_insert_action(self, other_action):
+        return [self, other_action]
+
+    def optimize_with_delete_action(self, other_action):
+        return [self, other_action]
+
+    def optimize_with_replace_action(self, other_action):
+        return [self, other_action]
+
+    def optimize(self, other_action):
+        return other_action.optimize_with_replace_action(self)
+
 class DeleteAction(Action):
     def __init__(self, pos, length, from_version, to_version):
         super().__init__(from_version, to_version)
@@ -230,3 +230,22 @@ class DeleteAction(Action):
             raise ValueError()
 
         return text[:pos] + text[pos + length:]
+
+    def optimize_with_insert_action(self, other_action):
+        return [self, other_action]
+
+    def optimize_with_delete_action(self, other_action):
+        if other_action.pos == self.pos:
+            action = DeleteAction(other_action.pos,
+                                  other_action.length + self.length,
+                                  self.from_version,
+                                  other_action.to_version)
+            return [action]
+
+        return [self, other_action]
+
+    def optimize_with_replace_action(self, other_action):
+        return [self, other_action]
+
+    def optimize(self, other_action):
+        return other_action.optimize_with_delete_action(self)
