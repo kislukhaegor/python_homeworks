@@ -65,37 +65,38 @@ class TextHistory:
 
     @staticmethod
     def _optymize_delete(action_list, action):
-        if type(action_list[-1]) != type(action) or type(action) != DeleteAction:
+        if not isinstance(action, type(action_list[-1])) or not isinstance(action, DeleteAction):
             return None
 
         if action.pos == action_list[-1].pos:
-            new_action = DeleteAction(action.pos,
-                                      action.length + action_list[-1].length,
-                                      action_list[-1].from_version,
-                                      action.to_version)
+            action = DeleteAction(action.pos,
+                                  action.length + action_list[-1].length,
+                                  action_list[-1].from_version,
+                                  action.to_version)
             del action_list[-1]
-            action_list.append(new_action)
+
+        action_list.append(action)
 
     @staticmethod
     def _optimyze_insert(action_list, action):
-        if type(action_list[-1]) != type(action) or type(action) != InsertAction:
+        if not isinstance(action, type(action_list[-1])) or not isinstance(action, InsertAction):
             return None
 
         if action.pos == action_list[-1].pos:
-            new_action = InsertAction(action.pos,
-                                      action.text,
-                                      action_list[-1].from_version,
-                                      action.to_version)
+            action = InsertAction(action.pos,
+                                  action.text,
+                                  action_list[-1].from_version,
+                                  action.to_version)
             del action_list[-1]
-            action_list.append(new_action)
 
         elif action.pos - (action_list[-1].pos + len(action_list[-1].text)) == 0:
-            new_action = InsertAction(action_list[-1].pos,
-                                      action_list[-1].text + action.text,
-                                      action_list[-1].from_version,
-                                      action.to_version)
+            action = InsertAction(action_list[-1].pos,
+                                  action_list[-1].text + action.text,
+                                  action_list[-1].from_version,
+                                  action.to_version)
             del action_list[-1]
-            action_list.append(new_action)
+
+        action_list.append(action)
 
     @staticmethod
     def _optimyze(actions):
@@ -103,10 +104,10 @@ class TextHistory:
         for action in actions:
             if not new_list:
                 new_list.append(action)
-            elif type(action) == type(new_list[-1]):
-                if type(action) == DeleteAction:
+            elif isinstance(action, type(new_list[-1])):
+                if isinstance(action, DeleteAction):
                     TextHistory._optymize_delete(new_list, action)
-                elif type(action) == InsertAction:
+                elif isinstance(action, InsertAction):
                     TextHistory._optimyze_insert(new_list, action)
                 else:
                     new_list.append(action)
