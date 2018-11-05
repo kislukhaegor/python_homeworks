@@ -60,8 +60,8 @@ class Queue:
         return id_
 
     def get_task(self):
-        self.update_tasks()
         for task in self._task_list:
+            task.update(self._timeout)
             if task.state == Task.State.INIT:
                 task.run()
                 return (task.id, len(task.data), task.data)
@@ -70,9 +70,13 @@ class Queue:
     def ack_task(self, id_):
         self.update_tasks()
         for index, task in enumerate(self._task_list):
-            if task.state == Task.State.EXECUTING and task.id == id_:
-                del self._task_list[index]
-                return True
+            if task.id == id_:
+                task.update(self._timeout)
+                if task.state == Task.State.EXECUTING:
+                    del self._task_list[index]
+                    return True
+                else:
+                    return False
         return False
 
     def in_task(self, id_):
@@ -120,6 +124,7 @@ class ServerCore(asyncio.Protocol):
     def __init__(self):
         super().__init__()
         self._buffer = b''
+        self.transport = None
 
     @classmethod
     def restore_from_dump(cls):
@@ -127,6 +132,27 @@ class ServerCore(asyncio.Protocol):
         if os.path.isfile(file_path) and os.path.getsize(file_path):
             with open(file_path, 'rb') as file:
                 cls.queue_storage = pickle.load(file)
+
+    @staticmethod
+    def run_server(ip, port, path, timeout):
+        ServerCore.restore_from_dump()
+        ServerCore.queue_storage.set_timeout(timeout)
+        ServerCore.path = path
+        loop = asyncio.get_event_loop()
+        coro = loop.create_server(
+            ServerCore,
+            ip, port
+        )
+        server = loop.run_until_complete(coro)
+        try:
+            loop.run_forever()
+        except KeyboardInterrupt:
+            pass
+
+        server.close()
+        loop.run_until_complete(server.wait_closed())
+        loop.close()
+        
 
     def connection_made(self, transport):
         self.transport = transport
@@ -216,25 +242,6 @@ class ServerCore(asyncio.Protocol):
         self.transport.close()
 
 
-def run_server(ip, port, path, timeout):
-    ServerCore.restore_from_dump()
-    ServerCore.queue_storage.set_timeout(timeout)
-    ServerCore.path = path
-    loop = asyncio.get_event_loop()
-    coro = loop.create_server(
-        ServerCore,
-        ip, port
-    )
-    server = loop.run_until_complete(coro)
-    try:
-        loop.run_forever()
-    except KeyboardInterrupt:
-        pass
-
-    server.close()
-    loop.run_until_complete(server.wait_closed())
-    loop.close()
-
 def parse_args():
     parser = argparse.ArgumentParser(description='This is a simple task queue server \
                                                   with custom protocol')
@@ -270,4 +277,4 @@ def parse_args():
 
 if __name__ == '__main__':
     ARGS = parse_args()
-    run_server(**ARGS.__dict__)
+    ServerCore.run_server(**ARGS.__dict__)
