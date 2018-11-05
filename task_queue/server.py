@@ -50,10 +50,6 @@ class Queue:
         self._task_list = list()
         self._timeout = timeout
 
-    def update_tasks(self):
-        for task in self._task_list:
-            task.update(self._timeout)
-
     def add_task(self, data):
         id_ = str(uuid4())
         self._task_list.append(Task(id_, data))
@@ -68,7 +64,6 @@ class Queue:
         return None
 
     def ack_task(self, id_):
-        self.update_tasks()
         for index, task in enumerate(self._task_list):
             if task.id == id_:
                 task.update(self._timeout)
