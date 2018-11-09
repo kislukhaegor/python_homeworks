@@ -111,6 +111,7 @@ class QueueStorage:
     def set_timeout(self, timeout):
         self._timeout = timeout
 
+
 class ServerCore(asyncio.Protocol):
     queue_storage = QueueStorage()
     path = "./"
@@ -148,7 +149,6 @@ class ServerCore(asyncio.Protocol):
         loop.run_until_complete(server.wait_closed())
         loop.close()
         
-
     def connection_made(self, transport):
         self.transport = transport
 
@@ -170,7 +170,6 @@ class ServerCore(asyncio.Protocol):
         queue_name = data[0]
         id_ = ServerCore.queue_storage.add_task(queue_name, data[2])
         return id_
-
 
     def process_get(self, data):
         if len(data) != 1:
