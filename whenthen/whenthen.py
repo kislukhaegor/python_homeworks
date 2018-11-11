@@ -6,6 +6,8 @@ def whenthen(f):
             self._then_funcs = []
 
         def __call__(self, *args, **kwargs):
+            if len(self._when_funcs) != len(self._then_funcs):
+                raise SyntaxError("Must be the same number of when and then")
             for index, func in enumerate(self._when_funcs):
                 if func(*args, **kwargs):
                     return self._then_funcs[index](*args, **kwargs)
