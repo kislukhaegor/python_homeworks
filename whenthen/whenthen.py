@@ -1,5 +1,3 @@
-from functools import wraps
-
 def whenthen(f):
     class Wrapper:
         def __init__(self, f):

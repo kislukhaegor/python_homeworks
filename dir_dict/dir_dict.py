@@ -1,8 +1,10 @@
-from collections.abc import MutableMapping
+from functools import reduce
+
 import os
 
 class DirDict():
-    __slots__ = '_dir'
+    __slots__ = ['_dir']
+
     def __init__(self, dir):
         if not os.path.exists(dir):
             os.mkdir(dir)
@@ -18,8 +20,8 @@ class DirDict():
         path = self._get_path(key)
         if not os.path.exists(path):
             raise KeyError(path)
-        with open('path', 'r') as f:
-            return " ".join(f.readlines())
+        with open(path, 'r') as f:
+            return reduce(lambda a, b: a + b, f.readlines())
 
     def __setitem__(self, key, item):
         path = self._get_path(key)
@@ -46,20 +48,39 @@ class DirDict():
 
 
     def keys(self):
-        return list(filter(os.path.isfile, os.listdir(path=self._dir)))
+        return list(os.listdir(path=self._dir))
     
     def __contains__(self, key):
         return key in self.keys()
 
-    def items(self):
+    def values(self):
         return [self[key] for key in self]
 
+    def items(self):
+        return list(zip(self.keys(), self.values()))
+
     def clear(self):
-        for key in self.keys:
-            os.remove(key)
+        for key in self.keys():
+            os.remove(self._get_path(key))
 
     def get(self, key, default=None):
         if key in self:
             return self[key]
-        return default
+        return str(default)
 
+    def pop(self, key, default=None):
+        if key not in self:
+            return str(default)
+        ret_val = self[key]
+        del self[key]
+        return ret_val
+
+    def setdefault(self, key, default=None):
+        if key in self:
+            return self[key]
+        self[key] = default
+        return str(default)
+
+    def update(self, other):
+        for key, value in other:
+            self[key] = value
