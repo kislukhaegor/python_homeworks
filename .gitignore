@@ -1,4 +1,4 @@
-.swap
+*.swap
 __pycache__
-.ipynb
-.swp
+*.ipynb
+*.swp
