@@ -2,7 +2,7 @@ from time import time
 from functools import wraps
 from inspect import isclass
 
-def __profile_impl(cls):
+def __profile_impl(cls=None):
     def impl(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -26,4 +26,4 @@ def profile(obj):
             if callable(attr):
                 setattr(obj, attr_name, __profile_impl(obj)(attr))
         return obj
-    return __profile_impl(None)(obj)
+    return __profile_impl()(obj)
