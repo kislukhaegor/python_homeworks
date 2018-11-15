@@ -1,8 +1,9 @@
 from functools import reduce
+from collections.abc import MutableMapping
 
 import os
 
-class DirDict():
+class DirDict(MutableMapping):
     __slots__ = ['_dir']
 
     def __init__(self, dir):
@@ -45,42 +46,3 @@ class DirDict():
 
     def __len__(self):
         return len(os.listdir(path=self._dir))
-
-
-    def keys(self):
-        return list(os.listdir(path=self._dir))
-    
-    def __contains__(self, key):
-        return key in self.keys()
-
-    def values(self):
-        return [self[key] for key in self]
-
-    def items(self):
-        return list(zip(self.keys(), self.values()))
-
-    def clear(self):
-        for key in self.keys():
-            os.remove(self._get_path(key))
-
-    def get(self, key, default=None):
-        if key in self:
-            return self[key]
-        return str(default)
-
-    def pop(self, key, default=None):
-        if key not in self:
-            return str(default)
-        ret_val = self[key]
-        del self[key]
-        return ret_val
-
-    def setdefault(self, key, default=None):
-        if key in self:
-            return self[key]
-        self[key] = default
-        return str(default)
-
-    def update(self, other):
-        for key, value in other:
-            self[key] = value

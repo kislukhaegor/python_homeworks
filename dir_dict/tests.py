@@ -120,7 +120,7 @@ class DirDictTests(TestCase):
         self.assertEqual({('file1', 'a'), ('file2', 'b'), ('file3', 'c')}, set(self.dir_dict.items()))
 
     def test_get(self):
-        self.assertEqual(str(None), self.dir_dict.get('file1'))
+        self.assertEqual(None, self.dir_dict.get('file1'))
         self.dir_dict['file1'] = 'qwe'
         self.assertEqual('qwe', self.dir_dict.get('file1'))
 
@@ -131,6 +131,6 @@ class DirDictTests(TestCase):
         self.assertFalse('file' in self.dir_dict)
 
     def test_setdefault(self):
-        self.assertEqual(str(None), self.dir_dict.setdefault('file'))
+        self.assertEqual(None, self.dir_dict.setdefault('file'))
         self.dir_dict['file'] = 'qwe'
         self.assertEqual('qwe', self.dir_dict.pop('file'))

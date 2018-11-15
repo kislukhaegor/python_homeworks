@@ -2,34 +2,28 @@ from time import time
 from functools import wraps
 from inspect import isclass
 
-def __profile_func(obj):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        print(f"`{f.__name__}` started")
-        timer = time()
-        ret_value = f(*args, **kwargs)
-        print(f"`{f.__name__}` finished in {time() - timer:.2f}s")
-        return ret_value
-    return wrapper
-
-def __profile_class_method(cls):
-        def impl(cls_method):
-            @wraps(cls_method)
-            def wrapper(*args, **kwargs):
-                print(f"`{cls.__name__}.{cls_method.__name__}` started")
-                timer = time()
-                ret_value = cls_method(*args, **kwargs)
-                print(f"`{cls.__name__}.{cls_method.__name__}` finished in {time() - timer:.2f}s")
-                return ret_value
-            return wrapper
-        return impl
+def __profile_impl(cls):
+    def impl(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if cls:
+                f_str = f"`{cls.__name__}.{func.__name__}`"
+            else:
+                f_str = f"`{func.__name__}`"
+            
+            print(f"{f_str} started")
+            timer = time()
+            ret_value = func(*args, **kwargs)
+            print(f"{f_str} finished in {time() - timer:.2f}s")
+            return ret_value
+        return wrapper
+    return impl
 
 def profile(obj):
     if isclass(obj):
         for attr_name in obj.__dict__:
             attr = getattr(obj, attr_name)
             if callable(attr):
-                setattr(obj, attr_name, __profile_class_method(obj)(attr))
+                setattr(obj, attr_name, __profile_impl(obj)(attr))
         return obj
-    print(obj)
-    return __profile_func(obj)
+    return __profile_impl(None)(obj)
